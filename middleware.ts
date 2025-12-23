@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server";
 
 export function middleware() {
-  return NextResponse.redirect(
-    "https://docs.google.com/spreadsheets/d/1M3u3t2TzVcJptUyfipu3IR8SExpFqIzHEeEQRoX7_-E/edit?usp=sharing",
-  );
+  return NextResponse.redirect("https://forms.gle/tKCPRXHazWBryjyo8");
 }
 
 export const config = {
