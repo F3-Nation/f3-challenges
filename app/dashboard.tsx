@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -649,6 +649,10 @@ function InstallInstructionsModal({
   platform: "ios" | "android" | "other";
   onDismiss: () => void;
 }) {
+  const [selectedPlatform, setSelectedPlatform] = useState<"ios" | "android">(
+    platform === "android" ? "android" : "ios",
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center md:bg-black/50 md:p-8">
       <div className="bg-white w-full h-full md:w-full md:max-w-lg md:h-auto md:max-h-[90vh] md:rounded-2xl md:overflow-hidden flex flex-col">
@@ -667,7 +671,7 @@ function InstallInstructionsModal({
         </div>
 
         {/* Modal Content */}
-        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+        <div className="flex-1 overflow-y-auto p-5 space-y-4">
           {isStandalone ? (
             // Already installed view
             <div className="text-center py-8">
@@ -686,7 +690,7 @@ function InstallInstructionsModal({
               </p>
             </div>
           ) : (
-            // Install instructions
+            // Install instructions with video
             <>
               <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
                 <p className="text-slate-700 text-sm">
@@ -695,8 +699,71 @@ function InstallInstructionsModal({
                 </p>
               </div>
 
-              {/* iOS Instructions */}
-              {(platform === "ios" || platform === "other") && (
+              {/* Platform Tabs */}
+              <div className="flex bg-slate-100 rounded-lg p-1">
+                <button
+                  onClick={() => setSelectedPlatform("ios")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                    selectedPlatform === "ios"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  <AppleLogo
+                    size={18}
+                    weight="fill"
+                    className={
+                      selectedPlatform === "ios"
+                        ? "text-slate-700"
+                        : "text-slate-400"
+                    }
+                  />
+                  iPhone
+                </button>
+                <button
+                  onClick={() => setSelectedPlatform("android")}
+                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-md text-sm font-medium transition-all ${
+                    selectedPlatform === "android"
+                      ? "bg-white text-slate-800 shadow-sm"
+                      : "text-slate-500 hover:text-slate-700"
+                  }`}
+                >
+                  <AndroidLogo
+                    size={18}
+                    weight="fill"
+                    className={
+                      selectedPlatform === "android"
+                        ? "text-green-600"
+                        : "text-slate-400"
+                    }
+                  />
+                  Android
+                </button>
+              </div>
+
+              {/* Video Player */}
+              <div className="rounded-xl overflow-hidden bg-slate-900 shadow-lg">
+                <video
+                  key={selectedPlatform}
+                  className="w-full"
+                  controls
+                  autoPlay
+                  muted
+                  playsInline
+                  loop
+                >
+                  <source
+                    src={
+                      selectedPlatform === "ios" ? "/ios.mp4" : "/android.mp4"
+                    }
+                    type="video/mp4"
+                  />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
+
+              {/* Instructions */}
+              {selectedPlatform === "ios" ? (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <AppleLogo
@@ -745,15 +812,7 @@ function InstallInstructionsModal({
                     </li>
                   </ol>
                 </div>
-              )}
-
-              {/* Divider for "other" platform */}
-              {platform === "other" && (
-                <div className="border-t border-slate-200" />
-              )}
-
-              {/* Android Instructions */}
-              {(platform === "android" || platform === "other") && (
+              ) : (
                 <div className="space-y-3">
                   <div className="flex items-center gap-2">
                     <AndroidLogo
