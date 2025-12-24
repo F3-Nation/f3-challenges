@@ -741,27 +741,6 @@ function InstallInstructionsModal({
                 </button>
               </div>
 
-              {/* Video Player */}
-              <div className="rounded-xl overflow-hidden bg-slate-900 shadow-lg">
-                <video
-                  key={selectedPlatform}
-                  className="w-full"
-                  controls
-                  autoPlay
-                  muted
-                  playsInline
-                  loop
-                >
-                  <source
-                    src={
-                      selectedPlatform === "ios" ? "/ios.mp4" : "/android.mp4"
-                    }
-                    type="video/mp4"
-                  />
-                  Your browser does not support the video tag.
-                </video>
-              </div>
-
               {/* Instructions */}
               {selectedPlatform === "ios" ? (
                 <div className="space-y-3">
@@ -874,6 +853,27 @@ function InstallInstructionsModal({
                   </ol>
                 </div>
               )}
+
+              {/* Video Player */}
+              <div className="rounded-xl overflow-hidden bg-slate-900 shadow-lg">
+                <video
+                  key={selectedPlatform}
+                  className="w-full"
+                  controls
+                  autoPlay
+                  muted
+                  playsInline
+                  loop
+                >
+                  <source
+                    src={
+                      selectedPlatform === "ios" ? "/ios.mp4" : "/android.mp4"
+                    }
+                    type="video/mp4"
+                  />
+                  Your browser does not support the video tag.
+                </video>
+              </div>
             </>
           )}
         </div>
