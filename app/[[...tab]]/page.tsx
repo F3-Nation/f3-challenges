@@ -11,24 +11,28 @@ type Props = {
 function parseRoute(segments: string[] = []): {
   tab: Tab;
   showSubmit: boolean;
+  showInstall: boolean;
 } {
   let tab: Tab = "info";
   let showSubmit = false;
+  let showInstall = false;
 
   for (const seg of segments) {
     if (seg === "submit") {
       showSubmit = true;
+    } else if (seg === "install") {
+      showInstall = true;
     } else if (VALID_TABS.has(seg)) {
       tab = seg as Tab;
     }
   }
 
-  return { tab, showSubmit };
+  return { tab, showSubmit, showInstall };
 }
 
 export default async function Home({ params }: Props) {
   const { tab: segments } = await params;
-  const { tab, showSubmit } = parseRoute(segments);
+  const { tab, showSubmit, showInstall } = parseRoute(segments);
 
   const [submissions, challenges] = await Promise.all([
     getSubmissions(),
@@ -43,6 +47,7 @@ export default async function Home({ params }: Props) {
       challenges={challenges}
       activeTab={tab}
       showSubmit={showSubmit}
+      showInstall={showInstall}
     />
   );
 }
