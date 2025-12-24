@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect, useSyncExternalStore } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Info,
   Trophy,
@@ -11,6 +13,12 @@ import {
   Medal,
   Star,
   House,
+  DeviceMobile,
+  Export,
+  DotsThreeVertical,
+  AppleLogo,
+  AndroidLogo,
+  CheckCircle,
 } from "@phosphor-icons/react";
 import { nameToSlug } from "./lib/utils";
 
@@ -24,6 +32,7 @@ type Props = {
   challenges: Challenge[];
   activeTab: Tab;
   showSubmit: boolean;
+  showInstall: boolean;
 };
 
 const TAB_PATHS: Record<Tab, string> = {
@@ -59,18 +68,97 @@ function formatActivity(activity: string) {
     .join(" ");
 }
 
+// Cookie helpers
+function getCookie(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const match = document.cookie.match(new RegExp(`(^| )${name}=([^;]+)`));
+  return match ? match[2] : null;
+}
+
+function setCookie(name: string, value: string, days: number) {
+  const expires = new Date(Date.now() + days * 864e5).toUTCString();
+  document.cookie = `${name}=${value}; expires=${expires}; path=/`;
+}
+
+// Platform detection
+function getDevicePlatform(): "ios" | "android" | "other" {
+  if (typeof navigator === "undefined") return "other";
+  const ua = navigator.userAgent.toLowerCase();
+  if (/iphone|ipad|ipod/.test(ua)) return "ios";
+  if (/android/.test(ua)) return "android";
+  return "other";
+}
+
+function isMobileDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /iphone|ipad|ipod|android/i.test(navigator.userAgent);
+}
+
+function isStandaloneMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as unknown as { standalone?: boolean }).standalone ===
+      true
+  );
+}
+
+// Subscriptions for useSyncExternalStore (no-op since values don't change)
+const emptySubscribe = () => () => {};
+
+// Custom hook for detecting client-side mounting using useSyncExternalStore
+function useIsClient() {
+  return useSyncExternalStore(
+    emptySubscribe,
+    () => true, // Client value
+    () => false, // Server value
+  );
+}
+
 export function Dashboard({
   leaderboard,
   challenges,
   activeTab,
   showSubmit,
+  showInstall,
 }: Props) {
+  const router = useRouter();
+  const isClient = useIsClient();
+
+  // Compute platform info only on client (SSR-safe)
+  const platform = isClient ? getDevicePlatform() : "other";
+  const isStandalone = isClient ? isStandaloneMode() : false;
+
+  // Auto-open install modal on mobile (if not installed and not dismissed)
+  useEffect(() => {
+    // Only run on client after initial render
+    if (typeof window === "undefined") return;
+
+    const shouldAutoOpen =
+      isMobileDevice() &&
+      !isStandaloneMode() &&
+      !getCookie("pwa-install-dismissed") &&
+      !showInstall &&
+      activeTab === "info";
+
+    if (shouldAutoOpen) {
+      router.push("/install");
+    }
+  }, [router, showInstall, activeTab]);
+
+  // Handle install modal dismiss
+  const handleInstallDismiss = () => {
+    setCookie("pwa-install-dismissed", "true", 30);
+    router.push(basePath);
+  };
+
   const standardChallenges = challenges.filter((c) => c.section === "Standard");
   const specialChallenges = challenges.filter((c) => c.section === "Special");
 
   const isHomeTab = activeTab === "info" || activeTab === "ranks";
   const basePath = TAB_PATHS[activeTab];
   const submitPath = `${basePath}${basePath === "/" ? "" : "/"}submit`;
+  const installPath = `${basePath}${basePath === "/" ? "" : "/"}install`;
 
   return (
     <div className="min-h-screen bg-slate-100">
@@ -185,7 +273,10 @@ export function Dashboard({
         {/* Mobile: Info Tab */}
         {activeTab === "info" && (
           <div className="space-y-4 md:hidden">
-            <InfoContent />
+            <InfoContent
+              isStandalone={isStandalone}
+              installPath={installPath}
+            />
           </div>
         )}
 
@@ -201,7 +292,10 @@ export function Dashboard({
           <div className="hidden md:grid md:grid-cols-2 md:gap-6">
             {/* Left Column - Info */}
             <div className="space-y-4">
-              <InfoContent />
+              <InfoContent
+                isStandalone={isStandalone}
+                installPath={installPath}
+              />
             </div>
 
             {/* Right Column - Ranks */}
@@ -280,7 +374,7 @@ export function Dashboard({
         </div>
       </div>
 
-      {/* Modal - Full screen on mobile, centered dialog on desktop */}
+      {/* Submit Modal - Full screen on mobile, centered dialog on desktop */}
       {showSubmit && (
         <div className="fixed inset-0 z-50 flex items-center justify-center md:bg-black/50 md:p-8">
           <div className="bg-white w-full h-full md:w-full md:max-w-2xl md:h-[90vh] md:rounded-2xl md:overflow-hidden flex flex-col">
@@ -306,12 +400,27 @@ export function Dashboard({
           </div>
         </div>
       )}
+
+      {/* Install Instructions Modal */}
+      {showInstall && (
+        <InstallInstructionsModal
+          isStandalone={isStandalone}
+          platform={platform}
+          onDismiss={handleInstallDismiss}
+        />
+      )}
     </div>
   );
 }
 
 // Extracted Info Content Component
-function InfoContent() {
+function InfoContent({
+  isStandalone,
+  installPath,
+}: {
+  isStandalone: boolean;
+  installPath: string;
+}) {
   return (
     <>
       {/* Hero Card */}
@@ -324,6 +433,37 @@ function InfoContent() {
           Complete challenges to earn points and reach podium levels.
         </p>
       </div>
+
+      {/* Install App Card */}
+      <Link
+        href={installPath}
+        className="block bg-white rounded-2xl p-4 shadow-sm hover:shadow-md transition-shadow border-2 border-transparent hover:border-orange-200"
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-10 h-10 rounded-full flex items-center justify-center ${
+              isStandalone ? "bg-green-100" : "bg-orange-100"
+            }`}
+          >
+            {isStandalone ? (
+              <CheckCircle size={22} weight="fill" className="text-green-500" />
+            ) : (
+              <DeviceMobile size={22} className="text-orange-500" />
+            )}
+          </div>
+          <div className="flex-1">
+            <h3 className="font-semibold text-slate-800">
+              {isStandalone ? "App Installed" : "Install App"}
+            </h3>
+            <p className="text-slate-500 text-sm">
+              {isStandalone
+                ? "You're using the installed app"
+                : "Add to your home screen"}
+            </p>
+          </div>
+          <span className="text-slate-400 text-sm">→</span>
+        </div>
+      </Link>
 
       {/* Podium Levels */}
       <div className="bg-white rounded-2xl p-4 shadow-sm">
@@ -352,7 +492,9 @@ function InfoContent() {
           <strong>IRON CLAD F3MT shirt</strong> in their podium color.
         </p>
         <div className="mt-4 pt-4 border-t border-slate-100 text-center">
-          <p className="text-lg font-bold text-slate-800">LET'S GOOOOO!!!!</p>
+          <p className="text-lg font-bold text-slate-800">
+            LET&apos;S GOOOOO!!!!
+          </p>
           <p className="text-slate-400 text-xs mt-2">— Jazz Hands</p>
         </div>
       </div>
@@ -494,5 +636,199 @@ function RanksContent({ leaderboard }: { leaderboard: LeaderboardEntry[] }) {
         </div>
       </div>
     </>
+  );
+}
+
+// Install Instructions Modal Component
+function InstallInstructionsModal({
+  isStandalone,
+  platform,
+  onDismiss,
+}: {
+  isStandalone: boolean;
+  platform: "ios" | "android" | "other";
+  onDismiss: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center md:bg-black/50 md:p-8">
+      <div className="bg-white w-full h-full md:w-full md:max-w-lg md:h-auto md:max-h-[90vh] md:rounded-2xl md:overflow-hidden flex flex-col">
+        {/* Modal Header */}
+        <div className="flex items-center justify-between p-4 border-b bg-slate-800 text-white md:rounded-t-2xl">
+          <div className="flex items-center gap-2">
+            <DeviceMobile size={20} />
+            <h2 className="font-semibold">Install App</h2>
+          </div>
+          <button
+            onClick={onDismiss}
+            className="p-2 -m-2 text-slate-400 hover:text-white transition-colors"
+          >
+            <X size={24} weight="bold" />
+          </button>
+        </div>
+
+        {/* Modal Content */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          {isStandalone ? (
+            // Already installed view
+            <div className="text-center py-8">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CheckCircle
+                  size={40}
+                  weight="fill"
+                  className="text-green-500"
+                />
+              </div>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">
+                You&apos;re All Set!
+              </h3>
+              <p className="text-slate-600">
+                The app is already installed on your device.
+              </p>
+            </div>
+          ) : (
+            // Install instructions
+            <>
+              <div className="bg-orange-50 border border-orange-200 rounded-xl p-4">
+                <p className="text-slate-700 text-sm">
+                  Add this app to your home screen for quick access and a better
+                  experience.
+                </p>
+              </div>
+
+              {/* iOS Instructions */}
+              {(platform === "ios" || platform === "other") && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <AppleLogo
+                      size={20}
+                      weight="fill"
+                      className="text-slate-700"
+                    />
+                    <h3 className="font-semibold text-slate-800">
+                      iPhone & iPad (Safari)
+                    </h3>
+                  </div>
+                  <ol className="space-y-3 text-sm">
+                    <li className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        1
+                      </span>
+                      <span className="text-slate-600">
+                        Tap the{" "}
+                        <strong className="text-slate-800">Share</strong> button{" "}
+                        <Export size={16} className="inline text-blue-500" /> at
+                        the bottom of Safari
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        2
+                      </span>
+                      <span className="text-slate-600">
+                        Scroll down and tap{" "}
+                        <strong className="text-slate-800">
+                          &quot;Add to Home Screen&quot;
+                        </strong>
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        3
+                      </span>
+                      <span className="text-slate-600">
+                        Tap{" "}
+                        <strong className="text-slate-800">
+                          &quot;Add&quot;
+                        </strong>{" "}
+                        in the top right corner
+                      </span>
+                    </li>
+                  </ol>
+                </div>
+              )}
+
+              {/* Divider for "other" platform */}
+              {platform === "other" && (
+                <div className="border-t border-slate-200" />
+              )}
+
+              {/* Android Instructions */}
+              {(platform === "android" || platform === "other") && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <AndroidLogo
+                      size={20}
+                      weight="fill"
+                      className="text-green-600"
+                    />
+                    <h3 className="font-semibold text-slate-800">
+                      Android (Chrome)
+                    </h3>
+                  </div>
+                  <ol className="space-y-3 text-sm">
+                    <li className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        1
+                      </span>
+                      <span className="text-slate-600">
+                        Tap the <strong className="text-slate-800">menu</strong>{" "}
+                        button{" "}
+                        <DotsThreeVertical
+                          size={16}
+                          weight="bold"
+                          className="inline text-slate-700"
+                        />{" "}
+                        in the top right
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        2
+                      </span>
+                      <span className="text-slate-600">
+                        Tap{" "}
+                        <strong className="text-slate-800">
+                          &quot;Add to Home Screen&quot;
+                        </strong>{" "}
+                        or{" "}
+                        <strong className="text-slate-800">
+                          &quot;Install app&quot;
+                        </strong>
+                      </span>
+                    </li>
+                    <li className="flex gap-3">
+                      <span className="flex-shrink-0 w-6 h-6 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">
+                        3
+                      </span>
+                      <span className="text-slate-600">
+                        Tap{" "}
+                        <strong className="text-slate-800">
+                          &quot;Add&quot;
+                        </strong>{" "}
+                        or{" "}
+                        <strong className="text-slate-800">
+                          &quot;Install&quot;
+                        </strong>{" "}
+                        to confirm
+                      </span>
+                    </li>
+                  </ol>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Modal Footer */}
+        <div className="p-4 border-t bg-slate-50 md:rounded-b-2xl">
+          <button
+            onClick={onDismiss}
+            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-3 rounded-xl active:scale-[0.98] transition-transform"
+          >
+            Got it
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
