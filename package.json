@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "db:local:up": "docker compose up -d postgres",
+    "db:local:down": "docker compose down"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
