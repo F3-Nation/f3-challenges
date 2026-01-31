@@ -3,6 +3,8 @@ import {
   getSubmissions,
   getChallenges,
   buildLeaderboard,
+  getGWOTMileEntries,
+  buildGWOTLeaderboard,
 } from "../../lib/data";
 import { findNameBySlug } from "../../lib/utils";
 import { ProfilePage } from "./profile-page";
@@ -19,15 +21,25 @@ export type SubmissionWithPoints = {
   rowIndex: number;
 };
 
+export type GWOTProgress = {
+  totalMiles: number;
+  walkMiles: number;
+  ruckMiles: number;
+  runMiles: number;
+  completed: boolean;
+};
+
 export default async function Profile({ params }: Props) {
   const { name: slug } = await params;
 
-  const [submissions, challenges] = await Promise.all([
+  const [submissions, challenges, gwotEntries] = await Promise.all([
     getSubmissions(),
     getChallenges(),
+    getGWOTMileEntries(),
   ]);
 
-  const leaderboard = buildLeaderboard(submissions, challenges);
+  const gwotLeaderboard = buildGWOTLeaderboard(gwotEntries);
+  const leaderboard = buildLeaderboard(submissions, challenges, gwotLeaderboard);
   const displayName = findNameBySlug(slug, leaderboard);
 
   if (!displayName) {
@@ -60,6 +72,24 @@ export default async function Profile({ params }: Props) {
         new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
     );
 
+  // Get GWOT progress for this user
+  const gwotEntry = gwotLeaderboard.find((e) => e.name === displayName);
+  const gwotProgress: GWOTProgress = gwotEntry
+    ? {
+        totalMiles: gwotEntry.totalMiles,
+        walkMiles: gwotEntry.walkMiles,
+        ruckMiles: gwotEntry.ruckMiles,
+        runMiles: gwotEntry.runMiles,
+        completed: gwotEntry.totalMiles >= 100,
+      }
+    : {
+        totalMiles: 0,
+        walkMiles: 0,
+        ruckMiles: 0,
+        runMiles: 0,
+        completed: false,
+      };
+
   return (
     <ProfilePage
       name={displayName}
@@ -67,6 +97,7 @@ export default async function Profile({ params }: Props) {
       rank={rank}
       totalParticipants={totalParticipants}
       submissions={participantSubmissions}
+      gwotProgress={gwotProgress}
     />
   );
 }
