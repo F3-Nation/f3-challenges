@@ -209,98 +209,97 @@ export function ProfilePage({
           )}
         </div>
 
-        {/* GWOT Progress Card */}
-        <div className="bg-white rounded-2xl shadow-sm overflow-hidden border-2 border-green-200">
-          <div className="px-4 py-3 bg-green-50 border-b border-green-100 flex items-center gap-2">
-            <FlagBanner size={16} weight="fill" className="text-green-600" />
-            <h2 className="text-xs font-semibold text-green-700 uppercase tracking-wider">
-              GWOT 100 Mile Challenge
-            </h2>
-            {gwotProgress.completed && (
-              <span className="ml-auto bg-green-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                COMPLETED +10 pts
-              </span>
-            )}
-          </div>
-          <div className="p-4">
-            <div className="flex items-center gap-4">
-              {/* Circular Progress */}
-              <div className="relative w-20 h-20 flex-shrink-0">
-                <svg className="w-20 h-20 transform -rotate-90">
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="36"
-                    fill="none"
-                    stroke="#e2e8f0"
-                    strokeWidth="8"
-                  />
-                  <circle
-                    cx="40"
-                    cy="40"
-                    r="36"
-                    fill="none"
-                    stroke={gwotProgress.completed ? "#16a34a" : "#22c55e"}
-                    strokeWidth="8"
-                    strokeLinecap="round"
-                    strokeDasharray={`${Math.min(100, (gwotProgress.totalMiles / 100) * 100) * 2.26} 226`}
-                  />
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-lg font-bold text-slate-800">
-                    {Math.min(100, Math.round((gwotProgress.totalMiles / 100) * 100))}%
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex-1">
-                <div className="text-2xl font-bold text-slate-800">
-                  {gwotProgress.totalMiles.toFixed(1)}{" "}
-                  <span className="text-base font-normal text-slate-500">
-                    / 100 miles
-                  </span>
-                </div>
-
-                {/* Activity Breakdown */}
-                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
-                  {gwotProgress.walkMiles > 0 && (
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-green-500" />
-                      <span className="text-slate-600">
-                        Walk: {gwotProgress.walkMiles.toFixed(1)}
-                      </span>
-                    </div>
-                  )}
-                  {gwotProgress.ruckMiles > 0 && (
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-blue-500" />
-                      <span className="text-slate-600">
-                        Ruck: {gwotProgress.ruckMiles.toFixed(1)}
-                      </span>
-                    </div>
-                  )}
-                  {gwotProgress.runMiles > 0 && (
-                    <div className="flex items-center gap-1">
-                      <div className="w-2 h-2 rounded-full bg-orange-500" />
-                      <span className="text-slate-600">
-                        Run: {gwotProgress.runMiles.toFixed(1)}
-                      </span>
-                    </div>
-                  )}
-                  {gwotProgress.totalMiles === 0 && (
-                    <span className="text-slate-400">No miles logged yet</span>
-                  )}
-                </div>
-              </div>
+        {/* GWOT Progress Card - Only show if user has logged at least 1 mile */}
+        {gwotProgress.totalMiles > 0 && (
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden border-2 border-green-200">
+            <div className="px-4 py-3 bg-green-50 border-b border-green-100 flex items-center gap-2">
+              <FlagBanner size={16} weight="fill" className="text-green-600" />
+              <h2 className="text-xs font-semibold text-green-700 uppercase tracking-wider">
+                GWOT 100 Mile Challenge
+              </h2>
+              {gwotProgress.completed && (
+                <span className="ml-auto bg-green-600 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                  COMPLETED +10 pts
+                </span>
+              )}
             </div>
+            <div className="p-4">
+              <div className="flex items-center gap-4">
+                {/* Circular Progress */}
+                <div className="relative w-20 h-20 flex-shrink-0">
+                  <svg className="w-20 h-20 transform -rotate-90">
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      fill="none"
+                      stroke="#e2e8f0"
+                      strokeWidth="8"
+                    />
+                    <circle
+                      cx="40"
+                      cy="40"
+                      r="36"
+                      fill="none"
+                      stroke={gwotProgress.completed ? "#16a34a" : "#22c55e"}
+                      strokeWidth="8"
+                      strokeLinecap="round"
+                      strokeDasharray={`${Math.min(100, (gwotProgress.totalMiles / 100) * 100) * 2.26} 226`}
+                    />
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <span className="text-lg font-bold text-slate-800">
+                      {Math.min(100, Math.round((gwotProgress.totalMiles / 100) * 100))}%
+                    </span>
+                  </div>
+                </div>
 
-            {!gwotProgress.completed && gwotProgress.totalMiles > 0 && (
-              <div className="mt-3 pt-3 border-t border-slate-100 text-sm text-slate-500">
-                {(100 - gwotProgress.totalMiles).toFixed(1)} miles to go!
+                <div className="flex-1">
+                  <div className="text-2xl font-bold text-slate-800">
+                    {gwotProgress.totalMiles.toFixed(1)}{" "}
+                    <span className="text-base font-normal text-slate-500">
+                      / 100 miles
+                    </span>
+                  </div>
+
+                  {/* Activity Breakdown */}
+                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                    {gwotProgress.walkMiles > 0 && (
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-green-500" />
+                        <span className="text-slate-600">
+                          Walk: {gwotProgress.walkMiles.toFixed(1)}
+                        </span>
+                      </div>
+                    )}
+                    {gwotProgress.ruckMiles > 0 && (
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-blue-500" />
+                        <span className="text-slate-600">
+                          Ruck: {gwotProgress.ruckMiles.toFixed(1)}
+                        </span>
+                      </div>
+                    )}
+                    {gwotProgress.runMiles > 0 && (
+                      <div className="flex items-center gap-1">
+                        <div className="w-2 h-2 rounded-full bg-orange-500" />
+                        <span className="text-slate-600">
+                          Run: {gwotProgress.runMiles.toFixed(1)}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
               </div>
-            )}
+
+              {!gwotProgress.completed && (
+                <div className="mt-3 pt-3 border-t border-slate-100 text-sm text-slate-500">
+                  {(100 - gwotProgress.totalMiles).toFixed(1)} miles to go!
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Submissions Audit Log */}
         <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
