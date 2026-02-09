@@ -292,11 +292,32 @@ export function ProfilePage({
                 </div>
               </div>
 
-              {!gwotProgress.completed && (
-                <div className="mt-3 pt-3 border-t border-slate-100 text-sm text-slate-500">
-                  {(100 - gwotProgress.totalMiles).toFixed(1)} miles to go!
-                </div>
-              )}
+              {!gwotProgress.completed && (() => {
+                const challengeStart = new Date(2026, 1, 1); // Feb 1, 2026
+                const now = new Date();
+                const daysSinceStart = Math.floor(
+                  (now.getTime() - challengeStart.getTime()) / (1000 * 60 * 60 * 24)
+                );
+                const daysElapsed = Math.max(1, Math.min(28, daysSinceStart));
+                const expectedMiles = daysElapsed * (100 / 28);
+                const net = gwotProgress.totalMiles - expectedMiles;
+                const milesToGo = (100 - gwotProgress.totalMiles).toFixed(1);
+
+                return (
+                  <div className="mt-3 pt-3 border-t border-slate-100 text-sm text-slate-500">
+                    {milesToGo} miles to go —{" "}
+                    {net >= 0 ? (
+                      <span className="text-green-600">
+                        +{net.toFixed(1)} mi ahead of pace
+                      </span>
+                    ) : (
+                      <span className="text-red-500">
+                        {Math.abs(net).toFixed(1)} mi behind pace
+                      </span>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         )}

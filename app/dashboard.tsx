@@ -990,6 +990,14 @@ function GWOTContent({
 }: {
   gwotLeaderboard: GWOTLeaderboardEntry[];
 }) {
+  const challengeStart = new Date(2026, 1, 1); // Feb 1, 2026
+  const now = new Date();
+  const daysSinceStart = Math.floor(
+    (now.getTime() - challengeStart.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const daysElapsed = Math.max(1, Math.min(28, daysSinceStart));
+  const expectedMiles = daysElapsed * (100 / 28);
+
   return (
     <>
       {/* Hero Card */}
@@ -1102,9 +1110,23 @@ function GWOTContent({
                   </div>
 
                   <div className="flex justify-between mt-1">
-                    <span className="text-xs text-slate-400">
-                      {percent.toFixed(0)}% complete
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400">
+                        {percent.toFixed(0)}% complete
+                      </span>
+                      {!completed && (() => {
+                        const net = entry.totalMiles - expectedMiles;
+                        return net >= 0 ? (
+                          <span className="text-xs text-green-600">
+                            +{net.toFixed(1)} mi ahead of pace
+                          </span>
+                        ) : (
+                          <span className="text-xs text-red-500">
+                            {Math.abs(net).toFixed(1)} mi behind pace
+                          </span>
+                        );
+                      })()}
+                    </div>
                     <span className="text-xs text-slate-400">100 mi goal</span>
                   </div>
                 </div>
