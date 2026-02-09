@@ -19,13 +19,22 @@ import {
   AppleLogo,
   AndroidLogo,
   CheckCircle,
+  PersonSimpleRun,
+  FlagBanner,
 } from "@phosphor-icons/react";
 import { nameToSlug } from "./lib/utils";
 
 type LeaderboardEntry = { name: string; points: number };
 type Challenge = { section: string; activity: string; points: number };
+type GWOTLeaderboardEntry = {
+  name: string;
+  totalMiles: number;
+  walkMiles: number;
+  ruckMiles: number;
+  runMiles: number;
+};
 
-type Tab = "info" | "ranks" | "challenges";
+type Tab = "info" | "ranks" | "challenges" | "gwot";
 
 type Props = {
   leaderboard: LeaderboardEntry[];
@@ -33,16 +42,22 @@ type Props = {
   activeTab: Tab;
   showSubmit: boolean;
   showInstall: boolean;
+  gwotLeaderboard: GWOTLeaderboardEntry[];
+  showGWOTSubmit: boolean;
 };
 
 const TAB_PATHS: Record<Tab, string> = {
   info: "/",
   ranks: "/ranks",
   challenges: "/challenges",
+  gwot: "/gwot",
 };
 
 const FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLScponPxBc3lZmg1sw-xtqTHHaEbio4w3jE_FtgzliIcyq1QDw/viewform?embedded=true";
+
+const GWOT_FORM_URL =
+  "https://docs.google.com/forms/d/e/1FAIpQLScFg_USVwo7NWSZNCWKAz1mw4xwuZNu9cmyWiy7b0oLZyD9Aw/viewform?embedded=true";
 
 const PODIUM_LEVELS = [
   { name: "Bronze", points: 50, color: "text-orange-500", bg: "bg-orange-500" },
@@ -121,6 +136,8 @@ export function Dashboard({
   activeTab,
   showSubmit,
   showInstall,
+  gwotLeaderboard,
+  showGWOTSubmit,
 }: Props) {
   const router = useRouter();
   const isClient = useIsClient();
@@ -217,14 +234,28 @@ export function Dashboard({
                 />
                 Challenges
               </Link>
+              <Link
+                href="/gwot"
+                className={`px-1 py-1 text-sm font-medium transition-all flex items-center gap-1.5 border-b-2 ${
+                  activeTab === "gwot"
+                    ? "text-white border-orange-400"
+                    : "text-slate-400 border-transparent hover:text-slate-200"
+                }`}
+              >
+                <FlagBanner
+                  size={16}
+                  weight={activeTab === "gwot" ? "fill" : "regular"}
+                />
+                GWOT
+              </Link>
             </nav>
           </div>
 
-          {/* Mobile Tabs - 3 tabs */}
+          {/* Mobile Tabs - 4 tabs */}
           <nav className="flex bg-slate-900/50 md:hidden">
             <Link
               href="/"
-              className={`flex-1 py-3 text-sm font-medium transition-all flex items-center justify-center gap-1.5 border-b-2 ${
+              className={`flex-1 py-3 text-xs font-medium transition-all flex flex-col items-center justify-center gap-0.5 border-b-2 ${
                 activeTab === "info"
                   ? "text-white border-orange-400 bg-slate-700/50"
                   : "text-slate-400 border-transparent"
@@ -238,7 +269,7 @@ export function Dashboard({
             </Link>
             <Link
               href="/ranks"
-              className={`flex-1 py-3 text-sm font-medium transition-all flex items-center justify-center gap-1.5 border-b-2 ${
+              className={`flex-1 py-3 text-xs font-medium transition-all flex flex-col items-center justify-center gap-0.5 border-b-2 ${
                 activeTab === "ranks"
                   ? "text-white border-orange-400 bg-slate-700/50"
                   : "text-slate-400 border-transparent"
@@ -252,7 +283,7 @@ export function Dashboard({
             </Link>
             <Link
               href="/challenges"
-              className={`flex-1 py-3 text-sm font-medium transition-all flex items-center justify-center gap-1.5 border-b-2 ${
+              className={`flex-1 py-3 text-xs font-medium transition-all flex flex-col items-center justify-center gap-0.5 border-b-2 ${
                 activeTab === "challenges"
                   ? "text-white border-orange-400 bg-slate-700/50"
                   : "text-slate-400 border-transparent"
@@ -263,6 +294,20 @@ export function Dashboard({
                 weight={activeTab === "challenges" ? "fill" : "regular"}
               />
               Challenges
+            </Link>
+            <Link
+              href="/gwot"
+              className={`flex-1 py-3 text-xs font-medium transition-all flex flex-col items-center justify-center gap-0.5 border-b-2 ${
+                activeTab === "gwot"
+                  ? "text-white border-orange-400 bg-slate-700/50"
+                  : "text-slate-400 border-transparent"
+              }`}
+            >
+              <FlagBanner
+                size={18}
+                weight={activeTab === "gwot" ? "fill" : "regular"}
+              />
+              GWOT
             </Link>
           </nav>
         </div>
@@ -359,18 +404,35 @@ export function Dashboard({
             </div>
           </div>
         )}
+
+        {/* GWOT Tab */}
+        {activeTab === "gwot" && (
+          <div className="space-y-4">
+            <GWOTContent gwotLeaderboard={gwotLeaderboard} />
+          </div>
+        )}
       </main>
 
       {/* Fixed Submit Button */}
       <div className="fixed bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-slate-100 via-slate-100 to-transparent pt-8">
         <div className="max-w-md mx-auto">
-          <Link
-            href={submitPath}
-            className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-4 rounded-xl text-lg active:scale-[0.98] transition-transform shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 hover:from-orange-600 hover:to-orange-700"
-          >
-            <PaperPlaneTilt size={22} weight="fill" />
-            Submit Challenge
-          </Link>
+          {activeTab === "gwot" ? (
+            <Link
+              href="/gwot/log-miles"
+              className="w-full bg-gradient-to-r from-green-500 to-green-600 text-white font-semibold py-4 rounded-xl text-lg active:scale-[0.98] transition-transform shadow-lg shadow-green-500/25 flex items-center justify-center gap-2 hover:from-green-600 hover:to-green-700"
+            >
+              <PersonSimpleRun size={22} weight="fill" />
+              Log Miles
+            </Link>
+          ) : (
+            <Link
+              href={submitPath}
+              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 text-white font-semibold py-4 rounded-xl text-lg active:scale-[0.98] transition-transform shadow-lg shadow-orange-500/25 flex items-center justify-center gap-2 hover:from-orange-600 hover:to-orange-700"
+            >
+              <PaperPlaneTilt size={22} weight="fill" />
+              Submit Challenge
+            </Link>
+          )}
         </div>
       </div>
 
@@ -408,6 +470,36 @@ export function Dashboard({
           platform={platform}
           onDismiss={handleInstallDismiss}
         />
+      )}
+
+      {/* GWOT Submit Modal */}
+      {showGWOTSubmit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center md:bg-black/50 md:p-8">
+          <div className="bg-white w-full h-full md:w-full md:max-w-2xl md:h-[90vh] md:rounded-2xl md:overflow-hidden flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-4 border-b bg-green-700 text-white md:rounded-t-2xl">
+              <div className="flex items-center gap-2">
+                <PersonSimpleRun size={20} weight="fill" />
+                <h2 className="font-semibold">Log Miles</h2>
+              </div>
+              <Link
+                href="/gwot"
+                className="p-2 -m-2 text-green-200 hover:text-white transition-colors"
+              >
+                <X size={24} weight="bold" />
+              </Link>
+            </div>
+
+            {/* Form iframe */}
+            <iframe
+              src={GWOT_FORM_URL}
+              className="flex-1 w-full border-0"
+              title="Log Miles Form"
+            >
+              Loading...
+            </iframe>
+          </div>
+        </div>
       )}
     </div>
   );
@@ -889,5 +981,181 @@ function InstallInstructionsModal({
         </div>
       </div>
     </div>
+  );
+}
+
+// GWOT Content Component
+function GWOTContent({
+  gwotLeaderboard,
+}: {
+  gwotLeaderboard: GWOTLeaderboardEntry[];
+}) {
+  const challengeStart = new Date(2026, 1, 1); // Feb 1, 2026
+  const now = new Date();
+  const daysSinceStart = Math.floor(
+    (now.getTime() - challengeStart.getTime()) / (1000 * 60 * 60 * 24)
+  );
+  const daysElapsed = Math.max(1, Math.min(28, daysSinceStart));
+  const expectedMiles = daysElapsed * (100 / 28);
+
+  return (
+    <>
+      {/* Hero Card */}
+      <div className="bg-gradient-to-br from-green-700 to-green-800 rounded-2xl p-5 text-white shadow-lg">
+        <div className="flex items-center gap-2 mb-2">
+          <FlagBanner size={24} weight="fill" />
+          <h1 className="text-lg font-bold">GWOT 100 Mile Challenge</h1>
+        </div>
+        <p className="text-green-100 leading-relaxed">
+          Complete 100 miles by February 28th to earn{" "}
+          <strong className="text-white">+10 Iron Clad Points</strong>.
+        </p>
+        <p className="text-green-300 text-sm mt-2">
+          Walk, ruck, or run - every mile counts!
+        </p>
+      </div>
+
+      {/* Mile Leaders */}
+      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+        <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center gap-2">
+          <Trophy size={16} className="text-slate-400" />
+          <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
+            Mile Leaders
+          </h2>
+        </div>
+
+        {gwotLeaderboard.length === 0 ? (
+          <div className="p-8 text-center">
+            <div className="w-12 h-12 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <PersonSimpleRun size={24} className="text-slate-300" />
+            </div>
+            <p className="text-slate-500">No miles logged yet</p>
+            <p className="text-slate-400 text-sm mt-1">Be the first to log!</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-slate-100 max-h-[400px] overflow-y-auto">
+            {gwotLeaderboard.map((entry, i) => {
+              const percent = Math.min(100, (entry.totalMiles / 100) * 100);
+              const completed = entry.totalMiles >= 100;
+              const walkPercent = (entry.walkMiles / 100) * 100;
+              const ruckPercent = (entry.ruckMiles / 100) * 100;
+              const runPercent = (entry.runMiles / 100) * 100;
+
+              return (
+                <div key={entry.name} className="px-4 py-3">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
+                        i === 0
+                          ? "bg-yellow-100 text-yellow-600"
+                          : i === 1
+                            ? "bg-slate-200 text-slate-600"
+                            : i === 2
+                              ? "bg-orange-100 text-orange-600"
+                              : "bg-slate-100 text-slate-500"
+                      }`}
+                    >
+                      {i + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <Link
+                        href={`/profile/${nameToSlug(entry.name)}`}
+                        className="font-medium text-slate-800 truncate hover:text-green-600 transition-colors"
+                      >
+                        {entry.name}
+                      </Link>
+                    </div>
+                    <div className="text-right flex items-center gap-2">
+                      {completed && (
+                        <span className="bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                          +10 pts
+                        </span>
+                      )}
+                      <div>
+                        <div className="font-bold text-slate-800">
+                          {entry.totalMiles.toFixed(1)}
+                        </div>
+                        <div className="text-xs text-slate-400">miles</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Stacked progress bar */}
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden flex">
+                    {entry.walkMiles > 0 && (
+                      <div
+                        className="h-full bg-green-500"
+                        style={{ width: `${Math.min(walkPercent, 100)}%` }}
+                        title={`Walk: ${entry.walkMiles.toFixed(1)} mi`}
+                      />
+                    )}
+                    {entry.ruckMiles > 0 && (
+                      <div
+                        className="h-full bg-blue-500"
+                        style={{
+                          width: `${Math.min(ruckPercent, 100 - walkPercent)}%`,
+                        }}
+                        title={`Ruck: ${entry.ruckMiles.toFixed(1)} mi`}
+                      />
+                    )}
+                    {entry.runMiles > 0 && (
+                      <div
+                        className="h-full bg-orange-500"
+                        style={{
+                          width: `${Math.min(runPercent, 100 - walkPercent - ruckPercent)}%`,
+                        }}
+                        title={`Run: ${entry.runMiles.toFixed(1)} mi`}
+                      />
+                    )}
+                  </div>
+
+                  <div className="flex justify-between mt-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-slate-400">
+                        {percent.toFixed(0)}% complete
+                      </span>
+                      {!completed && (() => {
+                        const net = entry.totalMiles - expectedMiles;
+                        return net >= 0 ? (
+                          <span className="text-xs text-green-600">
+                            +{net.toFixed(1)} mi ahead of pace
+                          </span>
+                        ) : (
+                          <span className="text-xs text-red-500">
+                            {Math.abs(net).toFixed(1)} mi behind pace
+                          </span>
+                        );
+                      })()}
+                    </div>
+                    <span className="text-xs text-slate-400">100 mi goal</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Activity Type Legend */}
+      <div className="bg-white rounded-2xl p-4 shadow-sm">
+        <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
+          Activity Types
+        </h2>
+        <div className="flex justify-around">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-green-500" />
+            <span className="text-sm text-slate-600">Walk</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-blue-500" />
+            <span className="text-sm text-slate-600">Ruck</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-orange-500" />
+            <span className="text-sm text-slate-600">Run</span>
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
