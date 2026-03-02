@@ -13,6 +13,14 @@ type Props = {
   params: Promise<{ name: string }>;
 };
 
+export type GWOTProgress = {
+  totalMiles: number;
+  walkMiles: number;
+  ruckMiles: number;
+  runMiles: number;
+  completed: boolean;
+};
+
 export type SubmissionWithPoints = {
   challenge: string;
   points: number;
@@ -21,13 +29,6 @@ export type SubmissionWithPoints = {
   rowIndex: number;
 };
 
-export type GWOTProgress = {
-  totalMiles: number;
-  walkMiles: number;
-  ruckMiles: number;
-  runMiles: number;
-  completed: boolean;
-};
 
 export default async function Profile({ params }: Props) {
   const { name: slug } = await params;
@@ -74,7 +75,7 @@ export default async function Profile({ params }: Props) {
 
   // Get GWOT progress for this user
   const gwotEntry = gwotLeaderboard.find((e) => e.name === displayName);
-  const gwotProgress: GWOTProgress = gwotEntry
+  const gwotProgress = gwotEntry
     ? {
         totalMiles: gwotEntry.totalMiles,
         walkMiles: gwotEntry.walkMiles,
